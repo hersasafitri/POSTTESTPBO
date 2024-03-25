@@ -1,14 +1,39 @@
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
 class Customer {
-    String name;
-    String phoneNumber;
-    String service;
+    protected String name;
+    protected String phoneNumber;
+    protected String service;
 
     public Customer(String name, String phoneNumber, String service) {
         this.name = name;
         this.phoneNumber = phoneNumber;
+        this.service = service;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public String getService() {
+        return service;
+    }
+
+    public void setService(String service) {
         this.service = service;
     }
 
@@ -18,13 +43,59 @@ class Customer {
     }
 }
 
+class RegularCustomer extends Customer {
+    private int loyaltyPoints;
+
+    public RegularCustomer(String name, String phoneNumber, String service, int loyaltyPoints) {
+        super(name, phoneNumber, service);
+        this.loyaltyPoints = loyaltyPoints;
+    }
+
+    public int getLoyaltyPoints() {
+        return loyaltyPoints;
+    }
+
+    public void setLoyaltyPoints(int loyaltyPoints) {
+        this.loyaltyPoints = loyaltyPoints;
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + " | Loyalty Points: " + loyaltyPoints;
+    }
+}
+
+class VIPCustomer extends Customer {
+    private String membershipLevel;
+
+    public VIPCustomer(String name, String phoneNumber, String service, String membershipLevel) {
+        super(name, phoneNumber, service);
+        this.membershipLevel = membershipLevel;
+    }
+
+    public String getMembershipLevel() {
+        return membershipLevel;
+    }
+
+    public void setMembershipLevel(String membershipLevel) {
+        this.membershipLevel = membershipLevel;
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + " | Membership Level: " + membershipLevel;
+    }
+}
+
 public class HairSalon {
+    private static Scanner scanner = new Scanner(System.in);
+
     public static void main(String[] args) {
         ArrayList<Customer> customerList = new ArrayList<>();
-        Scanner scanner = new Scanner(System.in);
         int choice;
 
         do {
+            clearScreen();
             System.out.println("Salon Rambut - Menu:");
             System.out.println("1. Tambah Pelanggan");
             System.out.println("2. Tampilkan Data Pelanggan");
@@ -37,16 +108,16 @@ public class HairSalon {
 
             switch (choice) {
                 case 1:
-                    addCustomer(customerList, scanner);
+                    addCustomer(customerList);
                     break;
                 case 2:
                     displayCustomers(customerList);
                     break;
                 case 3:
-                    updateCustomer(customerList, scanner);
+                    updateCustomer(customerList);
                     break;
                 case 4:
-                    deleteCustomer(customerList, scanner);
+                    deleteCustomer(customerList);
                     break;
                 case 5:
                     System.out.println("Program Selesai.");
@@ -54,10 +125,28 @@ public class HairSalon {
                 default:
                     System.out.println("Pilihan tidak valid. Silakan pilih lagi.");
             }
+            System.out.println("KETIK ENTER UNTUK MELANJUTKAN");
+            clearBuffer();
         } while (choice != 5);
     }
 
-    private static void addCustomer(ArrayList<Customer> customerList, Scanner scanner) {
+    private static void clearScreen() {
+        try {
+            if (System.getProperty("os.name").contains("Windows")) {
+                new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+            } else {
+                Runtime.getRuntime().exec("clear");
+            }
+        } catch (IOException | InterruptedException ex) {
+            System.out.println("Pembersihan layar gagal.");
+        }
+    }
+
+    private static void clearBuffer() {
+        scanner.nextLine();
+    }
+
+    private static void addCustomer(ArrayList<Customer> customerList) {
         scanner.nextLine();
         System.out.print("Masukkan Nama Pelanggan: ");
         String name = scanner.nextLine();
@@ -68,8 +157,20 @@ public class HairSalon {
         System.out.print("Jenis Layanan: ");
         String service = scanner.nextLine();
 
-        Customer newCustomer = new Customer(name, phoneNumber, service);
-        customerList.add(newCustomer);
+        System.out.print("Apakah pelanggan adalah pelanggan reguler? (ya/tidak): ");
+        String isRegular = scanner.nextLine();
+
+        if (isRegular.equalsIgnoreCase("ya")) {
+            System.out.print("Masukkan poin loyalitas: ");
+            int loyaltyPoints = scanner.nextInt();
+            RegularCustomer newRegularCustomer = new RegularCustomer(name, phoneNumber, service, loyaltyPoints);
+            customerList.add(newRegularCustomer);
+        } else {
+            System.out.print("Masukkan tingkat keanggotaan VIP: ");
+            String membershipLevel = scanner.nextLine();
+            VIPCustomer newVIPCustomer = new VIPCustomer(name, phoneNumber, service, membershipLevel);
+            customerList.add(newVIPCustomer);
+        }
 
         System.out.println("Pelanggan berhasil ditambahkan!");
     }
@@ -87,9 +188,10 @@ public class HairSalon {
             }
             System.out.println("+----+----------------------+-----------------+----------------------+");
         }
+        clearBuffer();
     }
 
-    private static void updateCustomer(ArrayList<Customer> customerList, Scanner scanner) {
+    private static void updateCustomer(ArrayList<Customer> customerList) {
         displayCustomers(customerList);
 
         if (!customerList.isEmpty()) {
@@ -97,7 +199,7 @@ public class HairSalon {
             int index = scanner.nextInt();
 
             if (index >= 1 && index <= customerList.size()) {
-                scanner.nextLine(); 
+                scanner.nextLine();
                 System.out.println("Data Pelanggan Lama: ");
                 System.out.println(customerList.get(index - 1));
 
@@ -110,8 +212,21 @@ public class HairSalon {
                 System.out.print("Jenis Layanan Baru: ");
                 String newService = scanner.nextLine();
 
-                Customer updatedCustomer = new Customer(newName, newPhoneNumber, newService);
-                customerList.set(index - 1, updatedCustomer);
+                if (customerList.get(index - 1) instanceof RegularCustomer) {
+                    System.out.print("Masukkan Poin Loyalitas Baru: ");
+                    int newLoyaltyPoints = scanner.nextInt();
+                    ((RegularCustomer) customerList.get(index - 1)).setLoyaltyPoints(newLoyaltyPoints);
+                } else if (customerList.get(index - 1) instanceof VIPCustomer) {
+                    System.out.print("Masukkan Tingkat Keanggotaan VIP Baru: ");
+                    scanner.nextLine();
+                    String newMembershipLevel = scanner.nextLine();
+                    ((VIPCustomer) customerList.get(index - 1)).setMembershipLevel(newMembershipLevel);
+
+                }
+
+                customerList.get(index - 1).setName(newName);
+                customerList.get(index - 1).setPhoneNumber(newPhoneNumber);
+                customerList.get(index - 1).setService(newService);
 
                 System.out.println("Data pelanggan berhasil diperbarui!");
             } else {
@@ -120,7 +235,7 @@ public class HairSalon {
         }
     }
 
-    private static void deleteCustomer(ArrayList<Customer> customerList, Scanner scanner) {
+    private static void deleteCustomer(ArrayList<Customer> customerList) {
         displayCustomers(customerList);
 
         if (!customerList.isEmpty()) {
